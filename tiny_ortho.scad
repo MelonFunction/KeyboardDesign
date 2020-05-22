@@ -100,8 +100,8 @@ module pro_micro_holder(){
 
 $fn = 16;
 
-micro_x = module_dimension[0]*(columns-1);
-micro_y = module_dimension[1]*(rows)-33-2.1+case_thickness;
+micro_x = module_dimension[0]*(columns-1)-2;
+micro_y = module_dimension[1]*(rows)-33-7.1+case_thickness;
 
 color("#999"){
 	// Case
