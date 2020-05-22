@@ -22,6 +22,7 @@ thumb_rot_step = 30;
 
 // Case constants
 case_height = 15;
+case_thickness = 5;
 
 module spacing(){
 	square([
@@ -77,35 +78,73 @@ module cutouts(create_switch_hole=true){
 function offset_y(step, rot) = step>1 ? (sin(rot*(step-1))*module_dimension[0]) : 0;
 function offset_x(hyp, y) = sqrt(hyp*hyp + y*y);
 
-	
+module shell_shape(){
+	// Rounded shell exterior
+	offset(case_thickness) shell();
+}
+
+module pro_micro_holder(){ 
+	difference(){
+		linear_extrude(4){
+			difference(){
+				offset(2) square([18,33]);
+				union(){
+					translate([2,5,0]) square([14,33]);
+					square([18,33]);
+				}
+			}
+		}
+		translate([-10,4,0]) cube([100,25,10]);
+	}
+}
+
+$fn = 16;
+
+micro_x = module_dimension[0]*(columns-1);
+micro_y = module_dimension[1]*(rows)-33-2.1+case_thickness;
+
 color("#999"){
 	// Case
-	linear_extrude(case_height){
-		difference(){
-			offset(spacing) shell();
-			offset(-spacing) offset(spacing) shell();
+	difference(){ // Remove wire cutout
+		difference(){ // Remove switch cutout
+			linear_extrude(case_height){
+				difference(){
+					shell_shape();
+					offset(-case_thickness) shell_shape();
+				}
+			}
+			translate([micro_x+2,micro_y,-0.01]) cube([14,999, 8]);
 		}
+		translate([micro_x,micro_y+4,-0.01]) cube([100,25, 2]);
 	}
 
 	// Plate
-	translate([0,0,case_height-plate_thickness]){
-		linear_extrude(plate_thickness){
+	translate([0,0,case_height-plate_thickness-0.01]){
+		difference(){
+
 			difference(){
-				offset(spacing) shell();
+				minkowski(){
+					linear_extrude(plate_thickness){
+						offset(-plate_thickness) shell_shape();
+					}
+					sphere(plate_thickness);
+				}
+				translate([-200,-200,-plate_thickness]) cube([400, 400, plate_thickness*2]);
+			}
+			linear_extrude(plate_thickness*2){
 				cutouts();
 			}
 		}
 	}
-
 }
+
 // Base
 color("#ddd"){
 	translate([0,0,-plate_thickness]){
 		linear_extrude(plate_thickness){
-			difference(){
-				offset(spacing) shell();
-				// cutouts();
-			}
+			shell_shape();
 		}
 	}
+
+	translate([micro_x,micro_y,-0.01]) pro_micro_holder();
 }
