@@ -1,7 +1,6 @@
 module mount_holes(){                   import("./master.dxf", layer="mount_holes");}
 module mount_holes_standoffs(){         import("./master.dxf", layer="mount_holes_standoffs");}
 module switch_holes(){                  import("./master.dxf", layer="switch_holes");}
-module pcb_footprint(){                 import("./master.dxf", layer="pcb_footprint");}
 module pcb_footprint_sharp(){           import("./master.dxf", layer="pcb_footprint_sharp");}
 module pcb_footprint_offset_notched(){  import("./master.dxf", layer="pcb_footprint_offset_notched");}
 module pcb_footprint_offset(){          import("./master.dxf", layer="pcb_footprint_offset");}
@@ -17,7 +16,7 @@ module bevel_join(){                    import("./master.dxf", layer="bevel_join
 module thumb_join(){                    import("./master.dxf", layer="thumb_join");}
 
 weight_thickness = 2; // can actually accommodate more than 2mm bc of spacers
-weight_cutout_depth = 1;
+weight_cutout_depth = 1.5;
 
 plate_thickness = 3;
 spacer_height = 7;   // metal pin height on sandwich style cases
@@ -111,28 +110,80 @@ echo("TOTAL HEIGHT MM:", bevel_thickness+spacer_height+plate_thickness);
     }
 }
 
+*difference(){
+    minkowski(){
+        rotate([180,0,0])
+            rotate_extrude()
+            bevel_high();
+        linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+2)
+            thumb_cutout();
+    }
+    translate([0,0,10])
+        minkowski(){
+            rotate([180,0,0])
+                rotate_extrude()
+                bevel_high();
+            linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+2)
+                offset(-10)
+                thumb_cutout();
+        }
+}
+
 
 module body(){
-    difference(){
-        minkowski(){
-           union(){
-                // top
-                rotate_extrude()
-                    bevel_high();
-                // bottom
-                rotate([180,0,0])
-                    rotate_extrude()
-                    bevel_high();
-            }
+        module main_body(rot){
+            minkowski(){
+                difference(){
+                    union(){
+                        // top
+                        rotate_extrude()
+                            bevel_high();
+                        // bottom
+                        rotate([180,0,0])
+                            rotate_extrude()
+                            bevel_high();
+                    }
 
-            difference(){
-                linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+0.001) 
-                    pcb_footprint_sharp();
-                // cut away thumb area
-                translate([0,0,-1])
-                    linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+2)
-                    thumb_cutout();
+                    // yeah, gcal freaks out and this seems to fix it
+                    rotate([0,0,rot ? 180+60+0.001 : 0])
+                    translate([0,-50,-50])
+                        cube([100,100,100]);
+                }
+
+                difference(){
+                    difference(){
+                        linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+0.001) 
+                            pcb_footprint_sharp();
+                        // cut away thumb area
+                        *translate([0,0,-1])
+                            linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+2)
+                            thumb_cutout();
+                        
+                        // cut away a bit of the main body so that a nice transition can happen
+                        minkowski(){
+                            cylinder(4, 0,10);
+
+                            translate([0,0,spacer_height+plate_thickness])
+                                linear_extrude(spacer_height+plate_thickness+above_plate_lip_height+2)
+                                offset(-10)
+                                thumb_cutout();
+                        }
+                    }
+
+                    translate([100,0,-5])
+                        rotate([0,0,20])
+                        translate([rot ? -200 : 0,-50,0])
+                        cube([200,200,200]);
+                }
             }
+        }
+
+    difference(){
+        union(){
+                // left
+                main_body(false);
+                // right
+                main_body(true);
         }
 
         // // Thumb cluster bevel cutout
@@ -329,16 +380,19 @@ module preview(){
 should_mirror = false;
 preview_mode = true;
 if (preview_mode == true){
-    $fn = 20;
+    $fn = 30;
 
     if (should_mirror == true) {
         translate([-150,0,0]) preview();
         translate([150,0,0]) mirror([1,0,0]) preview();
     } else {
-        preview();
+        difference(){
+            preview();
+            translate([90,-200,-50]) cube([400, 400, 100]);
+        }
     }
 } else {
-    $fn = 80;
+    $fn = 10;
 
     difference(){
         union(){
@@ -375,7 +429,5 @@ if (preview_mode == true){
                 block();
             }
         }
-
-        // translate([90,-200,-50]) cube([400, 400, 100]);
     }
 }
