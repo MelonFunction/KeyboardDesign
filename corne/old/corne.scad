@@ -355,6 +355,7 @@ module block(){
 }
 
 module preview(){
+    translate([0,0,bevel_thickness/2])
     difference(){
         union(){
             main();
@@ -369,7 +370,7 @@ module preview(){
     }
 
     // Caps
-    color("#333333") translate([0,0, spacer_height+plate_thickness-1+7.83]) minkowski(){
+    color("#333333") translate([0,0, spacer_height+plate_thickness-1+7.83 + bevel_thickness/2]) minkowski(){
         linear_extrude(0.001)
             switch_holes();
 
@@ -379,57 +380,55 @@ module preview(){
 
 should_mirror = false;
 preview_mode = true;
-// if (preview_mode == true){
-//     $fn = 30;
+if (preview_mode == true){
+    $fn = 30;
 
-//     if (should_mirror == true) {
-//         translate([-150,0,0]) preview();
-//         translate([150,0,0]) mirror([1,0,0]) preview();
-//     } else {
-//         difference(){
-//             preview();
-//             translate([90,-200,-50]) cube([400, 400, 100]);
-//         }
-//     }
-// } else {
-//     $fn = 10;
+    if (should_mirror == true) {
+        translate([-150,0,0]) preview();
+        translate([150,0,0]) mirror([1,0,0]) preview();
+    } else {
+        difference(){
+            preview();
+            // translate([90,-200,-50]) cube([400, 400, 100]);
+        }
+    }
+} else {
+    $fn = 10;
 
-//     difference(){
-//         union(){
-//             // Bottom left
-//             translate([-150,0,0]) color("#999999") translate([0,0,bevel_thickness/2]) union(){
-//                 difference(){
-//                     main();
-//                     block();
-//                 }
+    difference(){
+        union(){
+            // Bottom left
+            translate([-150,0,0]) color("#999999") translate([0,0,bevel_thickness/2]) union(){
+                difference(){
+                    main();
+                    block();
+                }
                 
-//                 standoffs();
-//             }
+                standoffs();
+            }
 
-//             // Bottom right
-//             translate([150,0,0]) mirror([1,0,0]) color("#999999") translate([0,0,bevel_thickness/2]) union(){
-//                 difference(){
-//                     main();
-//                     block();
-//                 }
+            // Bottom right
+            translate([150,0,0]) mirror([1,0,0]) color("#999999") translate([0,0,bevel_thickness/2]) union(){
+                difference(){
+                    main();
+                    block();
+                }
                 
-//                 standoffs();
-//             }
+                standoffs();
+            }
 
-//             // Top left
-//             // No idea why it's off by 1
-//             translate([-150,0,0]) color("#444444") translate([130,0,-spacer_height+1]) rotate([0,0,180]) intersection(){
-//                 main();
-//                 block();
-//             }
+            // Top left
+            // No idea why it's off by 1
+            translate([-150,0,0]) color("#444444") translate([130,0,-spacer_height+1]) rotate([0,0,180]) intersection(){
+                main();
+                block();
+            }
 
-//             // Top right
-//             translate([150,0,0]) mirror([1,0,0]) color("#444444") translate([130,0,-spacer_height+1]) rotate([0,0,180]) intersection(){
-//                 main();
-//                 block();
-//             }
-//         }
-//     }
-// }
-
-pcb_footprint_offset();
+            // Top right
+            translate([150,0,0]) mirror([1,0,0]) color("#444444") translate([130,0,-spacer_height+1]) rotate([0,0,180]) intersection(){
+                main();
+                block();
+            }
+        }
+    }
+}
